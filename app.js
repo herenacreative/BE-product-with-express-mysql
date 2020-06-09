@@ -1,83 +1,47 @@
+/*
+    8 june 
+    alur: buat semua di app.js baru pembagian
+    pertama buat env
+    ke file config/global
+    buat mysql pindahkan code. export dan import pada app
+    buat index untuk memberikan keterangan
+*/
+
 const express = require('express');
 const app = express();
+
+//dotenv : untuk menyimpna data yang sensitif (DB)
 require('dotenv').config()
+
+//body parser : berfungsi untuk merubah dari json ke javascript
 const bodyParser = require('body-parser')
+
+//morgan : unutk memberika log pada postmannya
 const morgan = require('morgan')
+
+//connection berfungsi untuk mengkoneksi ka mysl, di proses .env ke mysql 
 const connection = require('./src/helpers/mysql')
-const helpers = require('./src/helpers/index')
 
+const routers = require('./src/routes/index')
 
+//memberikan keterangan error atau tidaknya
 connection.connect(function(error) {
     if (error) throw error;
     console.log("databse has connected")
 })
 
+// eksekusi morgan
 app.use(morgan('dev'));
 
+//eksekusi body parser
 app.use(bodyParser.urlencoded({
     extended: true
 }))
 app.use(bodyParser.json());
 
-app.get('/products', function(request, response) {
-    connection.query('SELECT * FROM tb_products', function(error, result) {
-        if (error) {
-            console.log(error);
-            return helpers.response(response, 'fail', 'internal Server Error', 500)
-        }
-        return helpers.response(response, 'success', result, 200)
-    })
-})
-
-app.post('/products', function(request, response) {
-    const setData = request.body
-    console.log(request.body)
-    connection.query('INSERT INTO tb_products SET ?', setData, function(error, result) {
-        if (error) {
-            console.log(error);
-            return helpers.response(response, 'fail', 'internal Server Error', 500)
-        }
-        console.log(result)
-        const newData = {
-            id: result.insertId,
-            ...setData
-        };
-        return helpers.response(response, 'success', newData, 200)
-    })
-})
-
-app.put('/products/:id', function(request, response) {
-    const setData = request.body;
-    const id = request.params.id;
-    connection.query('UPDATE tb_products SET ? WHERE id_products=?', [setData, id], function(error, result) {
-        if (error) {
-            console.log(error);
-            return helpers.response(response, 'fail', 'internal Server Error', 500)
-        }
-        console.log(result)
-        const newData = {
-            id: result.insertId,
-            ...setData
-        };
-        return helpers.response(response, 'success', newData, 200)
-    })
-})
-
-app.delete('/products/:id', function(request, response) {
-    const id = request.params.id;
-    connection.query('DELETE FROM tb_products WHERE id_products=?', id, function(error, result) {
-        if (error) {
-            console.log(error);
-            return helpers.response(response, 'fail', 'internal Server Error', 500)
-        }
-        const newData = {
-            id: result.insertId,
-            ...setData
-        };
-        return helpers.response(response, 'success', newData, 200)
-    })
-})
+app.use('/', routers)
 
 app.listen(3000, function() {
+    //untuk memberi notif tampilan port 3000
     console.log('posapp-api running at port 3000!')
 })
